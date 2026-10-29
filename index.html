@@ -1,0 +1,137 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Little Wild Things</title>
+<style>
+body{margin:0;background:#f4f0e4;color:#334b38;
+font-family:Georgia,serif;text-align:center}
+main{max-width:480px;margin:auto;padding:18px}
+h1{font-size:29px;margin-bottom:5px}
+.scene{height:250px;position:relative;overflow:hidden;
+border-radius:22px;background:linear-gradient(#a6c6b7 65%,#8ba776 65%)}
+.tree{position:absolute;bottom:30px;left:5%;font-size:95px}
+.house{position:absolute;bottom:30px;right:6%;font-size:100px}
+.mouse{position:absolute;bottom:20px;left:25%;font-size:54px;
+transition:left 1s}
+.flowers{position:absolute;bottom:5px;left:10%;font-size:28px}
+.panel{background:#fffdf5;border-radius:16px;
+padding:17px;margin-top:14px;box-shadow:0 2px 8px #0001}
+button{background:#416c50;color:white;border:0;
+border-radius:12px;padding:13px;margin:5px;cursor:pointer}
+input{padding:8px;border:1px solid #aaa;border-radius:8px;
+width:110px}
+.entry{padding:10px;border-bottom:1px solid #ddd}
+small{color:#66776b}
+</style>
+</head>
+<body>
+<main>
+<h1>🌿 Little Wild Things</h1>
+<p>A tiny life in the Wicklow woods</p>
+<div class="scene">
+<div class="tree">🌳</div>
+<div class="house">🏡</div>
+<div class="flowers">🍄🌼🌿</div>
+<div class="mouse" id="mouse">🐭</div>
+</div>
+<div class="panel">
+<h2 id="heading">Meet Moss</h2>
+<p id="status">A new day begins in the woods.</p>
+<p>🌰 Finds: <b id="finds">0</b>
+&nbsp; 📖 Memories: <b id="count">0</b></p>
+<button onclick="decide()">Let Moss decide</button>
+<button onclick="toggle()" id="auto">Start little life</button>
+<p><small>Rename your creature:</small></p>
+<input id="name" value="Moss" onchange="rename()">
+</div>
+<div class="panel">
+<h2>📓 Woodland Diary</h2>
+<div id="diary">No adventures yet.</div>
+</div>
+<div class="panel">
+<h2>🎒 Little Treasures</h2>
+<p id="treasures">Nothing collected yet.</p>
+</div>
+<small>Moss remembers adventures in this browser.</small>
+</main>
+<script>
+const activities=[
+["explored the old oak","an acorn",
+"I wonder how old this tree is."],
+["visited the stream","a smooth pebble",
+"The water was singing today."],
+["investigated the mushrooms","a mushroom sketch",
+"Perhaps mushrooms are tiny umbrellas."],
+["read beside the fireplace","a pressed leaf",
+"I think books smell like rainy afternoons."],
+["searched the hedge","a blue feather",
+"The hedge is keeping secrets."],
+["went on a mysterious expedition","a shiny spoon",
+"I have decided spoons are fascinating."],
+["watched the clouds","a cloud drawing",
+"One looked exactly like a teapot."],
+["tidied the cottage","a tiny button",
+"Perhaps the forest has lost its coat."]
+];
+let state;
+try{
+state=JSON.parse(localStorage.getItem("moss-life"));
+}catch(e){}
+if(!state||!Array.isArray(state.diary)){
+state={name:"Moss",diary:[],items:[]};
+}
+let timer=null;
+function save(){
+localStorage.setItem("moss-life",JSON.stringify(state));
+}
+function render(){
+document.getElementById("heading").textContent="Meet "+state.name;
+document.getElementById("name").value=state.name;
+document.getElementById("finds").textContent=state.items.length;
+document.getElementById("count").textContent=state.diary.length;
+document.getElementById("treasures").textContent=
+state.items.join(" · ")||"Nothing collected yet.";
+document.getElementById("diary").replaceChildren();
+if(!state.diary.length){
+document.getElementById("diary").textContent="No adventures yet.";
+}
+state.diary.slice(-10).reverse().forEach(entry=>{
+const p=document.createElement("p");
+p.className="entry";
+p.textContent=entry;
+document.getElementById("diary").appendChild(p);
+});
+}
+function decide(){
+const a=activities[Math.floor(Math.random()*activities.length)];
+state.items.push(a[1]);
+state.diary.push(state.name+" "+a[0]+". Found "+a[1]+
+". Diary: "+a[2]);
+state.diary=state.diary.slice(-40);
+state.items=state.items.slice(-40);
+document.getElementById("status").textContent=
+state.name+" "+a[0]+".";
+document.getElementById("mouse").style.left=
+(15+Math.random()*40)+"%";
+save();render();
+}
+function rename(){
+state.name=document.getElementById("name").value.trim()||"Moss";
+save();render();
+}
+function toggle(){
+const b=document.getElementById("auto");
+if(timer){
+clearInterval(timer);timer=null;b.textContent="Start little life";
+}else{
+decide();timer=setInterval(decide,12000);
+b.textContent="Pause little life";
+}
+}
+render();
+</script>
+</body>
+</html>
