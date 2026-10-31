@@ -152,7 +152,7 @@ function worldStory(title,words,choices){$('worldStoryTitle').textContent=title;
 function distToLine(px,py,a,b){const dx=b[0]-a[0],dy=b[1]-a[1],t=Math.max(0,Math.min(1,((px-a[0])*dx+(py-a[1])*dy)/(dx*dx+dy*dy)));return Math.hypot(px-a[0]-t*dx,py-a[1]-t*dy)}
 function nearWorldPath(x,y){return worldPaths.some(path=>path.slice(1).some((b,i)=>distToLine(x,y,path[i],b)<112))}
 let seedWorld=42391;function worldRand(){seedWorld=(seedWorld*1664525+1013904223)>>>0;return seedWorld/4294967296}
-const worldTrees=[];for(let n=0;n<350;n++){const x=60+worldRand()*3080,y=100+worldRand()*2420;if(nearWorldPath(x,y)||worldLandmarks.some(o=>Math.hypot(x-o.x,y-o.y)<180)||(x>680&&x<1750&&y>450&&y<900)||(Math.pow((x-2530)/380,2)+Math.pow((y-815)/270,2)<1)||(x<940&&y>1990))continue;worldTrees.push({x,y,r:50+worldRand()*32,t:worldRand()})}
+const worldTrees=[];for(let n=0;n<125;n++){const x=60+worldRand()*3080,y=100+worldRand()*2420;if(nearWorldPath(x,y)||worldLandmarks.some(o=>Math.hypot(x-o.x,y-o.y)<180)||(x>680&&x<1750&&y>450&&y<900)||(Math.pow((x-2530)/380,2)+Math.pow((y-815)/270,2)<1)||(x<940&&y>1990))continue;worldTrees.push({x,y,r:50+worldRand()*32,t:worldRand()})}
 function worldBlocked(x,y){if(x<60||x>WORLD_W-60||y<100||y>WORLD_H-60)return true;if(worldState.stage<3&&x<960&&y>2000)return true;if(x>720&&x<1080&&y>590&&y<810)return true;if(x>1320&&x<1720&&y>520&&y<760)return true;if(Math.pow((x-2530)/278,2)+Math.pow((y-815)/160,2)<1)return true;return worldTrees.some(t=>Math.hypot(x-t.x,y-t.y)<35)}
 const worldGround=document.createElement('canvas');worldGround.width=WORLD_W;worldGround.height=WORLD_H;const wg=worldGround.getContext('2d');
 function worldEllipse(x,y,rx,ry,fill){wg.fillStyle=fill;wg.beginPath();wg.ellipse(x,y,rx,ry,0,0,Math.PI*2);wg.fill()}
@@ -407,24 +407,32 @@ const natureArt={"atlas": "data:image/webp;base64,UklGRrLaCwBXRUJQVlA4WAoAAAAQAA
 const natureAtlas=new Image(),natureGround=new Image();
 function natureSprite(cell,x,y,w,h){const cw=natureAtlas.naturalWidth/3,ch=natureAtlas.naturalHeight/2;wg.drawImage(natureAtlas,(cell%3)*cw,Math.floor(cell/3)*ch,cw,ch,x,y,w,h)}
 function paintNatureShelter(){if(sheepState.stage<4||!natureAtlas.naturalWidth)return;natureSprite(4,1045,690,270,270);natureSprite(5,1065,905,230,95);worldLabel('Persephone’s shelter',1180,1005)}
+function paintSoftTree(t){
+ const birch=t.t>.72,r=t.r*(birch?.7:1),x=t.x,y=t.y;
+ worldEllipse(x+8,y+8,r*.7,12,'#6074551c');
+ wg.strokeStyle=birch?'#e8e4d2':'#99866b';wg.lineWidth=birch?12:19;wg.lineCap='round';wg.beginPath();wg.moveTo(x,y);wg.quadraticCurveTo(x-5,y-52,x+4,y-r*1.7);wg.stroke();
+ wg.lineWidth=birch?5:8;wg.beginPath();wg.moveTo(x,y-42);wg.lineTo(x-r*.43,y-r*1.2);wg.moveTo(x,y-62);wg.lineTo(x+r*.42,y-r*1.55);wg.stroke();
+ if(birch){wg.strokeStyle='#9e9f8b';wg.lineWidth=2;for(let j=0;j<4;j++){wg.beginPath();wg.moveTo(x-5,y-14-j*23);wg.lineTo(x+2,y-17-j*23);wg.stroke()}}
+ const colors=birch?['#a7bd91','#b8c99f','#c4d1aa']:['#90aa84','#a3b990','#b6c69e'];
+ for(let j=0;j<7;j++){const angle=j*2.4+t.t*5,cx=x+Math.cos(angle)*r*.43,cy=y-r*1.7+Math.sin(angle)*r*.37;worldEllipse(cx,cy,r*(.58+(j%3)*.06),r*(birch?.65:.52),colors[j%3])}
+}
 function repaintStoryWorld(){if(!natureAtlas.complete||!natureGround.complete||!natureAtlas.naturalWidth||!natureGround.naturalWidth)return;
  let seed=81277;const rand=()=>{seed=(seed*1664525+1013904223)>>>0;return seed/4294967296};
- wg.clearRect(0,0,WORLD_W,WORLD_H);for(let x=0;x<WORLD_W;x+=640)for(let y=0;y<WORLD_H;y+=640)wg.drawImage(natureGround,x,y,640,640);
- // Layered soil edges and thousands of fine flecks soften the paths without changing their routes.
- for(const path of worldPaths){wg.lineCap='round';wg.lineJoin='round';for(const [width,color] of [[140,'#6d734310'],[125,'#8e855526'],[108,'#b8a477'],[94,'#d2bd92']]){wg.strokeStyle=color;wg.lineWidth=width;wg.beginPath();path.forEach((p,i)=>i?wg.lineTo(...p):wg.moveTo(...p));wg.stroke()}wg.save();wg.globalCompositeOperation='multiply';wg.globalAlpha=.18;wg.strokeStyle=wg.createPattern(natureGround,'repeat');wg.lineWidth=92;wg.stroke();wg.restore()}
- for(let i=0;i<12000;i++){const x=rand()*WORLD_W,y=rand()*WORLD_H;if(!worldPaths.some(path=>path.slice(1).some((b,j)=>distToLine(x,y,path[j],b)<46)))continue;worldEllipse(x,y,rand()*3+.4,rand()*1.5+.3,i%3?'#8c795339':'#efdfbb70')}
+ wg.clearRect(0,0,WORLD_W,WORLD_H);wg.fillStyle='#becba5';wg.fillRect(0,0,WORLD_W,WORLD_H);
+ for(let i=0;i<75;i++){const x=rand()*WORLD_W,y=rand()*WORLD_H,r=90+rand()*180;const wash=wg.createRadialGradient(x,y,0,x,y,r);wash.addColorStop(0,i%2?'#dce2bb60':'#9cb58d35');wash.addColorStop(1,'#becba500');wg.fillStyle=wash;wg.fillRect(x-r,y-r,r*2,r*2)}
+ for(const path of worldPaths){wg.lineCap='round';wg.lineJoin='round';for(const [width,color] of [[122,'#b1b48c40'],[104,'#cdbf9e'],[88,'#e0d1b0']]){wg.strokeStyle=color;wg.lineWidth=width;wg.beginPath();path.forEach((p,i)=>i?wg.lineTo(...p):wg.moveTo(...p));wg.stroke()}}
  natureSprite(3,2160,555,740,500);
  // Garden soil and seedlings remain at the original garden entrance.
  for(let row=0;row<2;row++)for(let col=0;col<3;col++){const x=1352+col*112,y=556+row*92;wg.fillStyle='#7e6343';wg.beginPath();wg.roundRect(x,y,92,70,10);wg.fill();wg.strokeStyle='#a18556';wg.lineWidth=6;wg.stroke();for(let j=0;j<34;j++)worldEllipse(x+5+rand()*80,y+5+rand()*60,1.5,.8,'#c2a37366');for(let k=0;k<3;k++){wg.strokeStyle='#6d8a4f';wg.lineWidth=3;wg.beginPath();wg.moveTo(x+22+k*24,y+47);wg.quadraticCurveTo(x+14+k*24,y+22,x+19+k*24,y+29);wg.moveTo(x+22+k*24,y+47);wg.quadraticCurveTo(x+36+k*24,y+24,x+29+k*24,y+29);wg.stroke()}}
  for(let row=0;row<2;row++)for(let col=0;col<3;col++)natureSprite(5,1345+col*112,525+row*92,110,95);
  // Every visible trunk keeps its existing collision position.
- for(const t of worldTrees){worldEllipse(t.x+10,t.y+14,t.r*.85,16,'#3f57332b');const h=t.r*3.5,w=t.r*2.8;natureSprite(t.t<.33?0:t.t<.7?1:2,t.x-w/2,t.y-h+30,w,h)}
- // Ferns, flowers and mossy rocks decorate the verge, clear of the walking strip.
- for(let i=0;i<105;i++){const x=90+rand()*3020,y=160+rand()*2300;if(worldPaths.some(path=>path.slice(1).some((b,j)=>distToLine(x,y,path[j],b)<58)))continue;if(Math.pow((x-2530)/380,2)+Math.pow((y-815)/260,2)<1)continue;natureSprite(5,x-50,y-30,85+rand()*45,60+rand()*30)}
+ for(const t of worldTrees){paintSoftTree(t)}
+ // Small, quiet flower groups near the garden, leaving clearings open.
+ for(let i=0;i<16;i++){const x=1250+rand()*550,y=780+rand()*120;for(let j=0;j<3;j++)worldEllipse(x+rand()*20,y+rand()*12,2.5,2,j%2?'#f2e9cc':'#c8b5c6')}
  // A leafy boundary still marks the locked grove; the same arch opens after the lantern quest.
- for(let x=160;x<970;x+=135)natureSprite(2,x-65,1860,140,175);
+ for(let x=160;x<970;x+=185)paintSoftTree({x,y:2020,r:48,t:.6});
  wg.strokeStyle='#72583b';wg.lineWidth=13;wg.beginPath();wg.moveTo(575,2025);wg.lineTo(575,1920);wg.quadraticCurveTo(650,1820,725,1920);wg.lineTo(725,2025);wg.stroke();for(let i=0;i<8;i++)natureSprite(5,565+i*22,1880-Math.sin(i/7*Math.PI)*56,56,48);worldLabel('The bramble arch',650,1840);
- natureSprite(2,280,1920,410,410);wg.fillStyle='#9f835b';wg.beginPath();wg.roundRect(458,2180,65,91,[32,32,0,0]);wg.fill();wg.strokeStyle='#654f37';wg.lineWidth=5;wg.stroke();worldEllipse(508,2237,4,4,'#d1b570');worldLabel('A very small door',490,2350);
+ paintSoftTree({x:490,y:2270,r:118,t:.4});wg.fillStyle='#9f835b';wg.beginPath();wg.roundRect(458,2180,65,91,[32,32,0,0]);wg.fill();wg.strokeStyle='#654f37';wg.lineWidth=5;wg.stroke();worldEllipse(508,2237,4,4,'#d1b570');worldLabel('A very small door',490,2350);
  wg.fillStyle='#a48b60';wg.fillRect(1114,1135,10,72);wg.fillStyle='#d7c198';wg.beginPath();wg.roundRect(1048,1090,148,64,9);wg.fill();wg.strokeStyle='#927651';wg.lineWidth=4;wg.stroke();wg.font='15px Georgia';wg.fillStyle='#526444';wg.textAlign='center';wg.fillText('Home ↑  Pond →',1120,1116);wg.fillText('Village ↓',1120,1138);
  paintStorybookBuildings();paintNatureShelter();paintPicnic();worldLabel('The garden',1500,855);worldLabel('Pond · Pip’s nest',2430,1110);worldLabel('Little Bramble Village',1880,2410);worldLabel('The little sheep meadow',2740,1480);
 }
